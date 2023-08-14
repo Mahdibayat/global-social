@@ -2,7 +2,8 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import {useEffect} from 'react'
-import { Box } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import geojson from '@/public/fakeData.json'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,7 +20,7 @@ export default function Home() {
         container: 'map', // container ID
         style: 'mapbox://styles/mapbox/streets-v12', // style URL
         center: [-74.5, 40], // starting position [lng, lat]
-        zoom: 1 // starting zoom
+        zoom: 0.75
     });
 
     map.on('load', () => {
@@ -32,7 +33,37 @@ export default function Home() {
           },
           'source-layer': 'contour'
       });
-  });
+    });
+
+    map.on('style.load', () => {
+      map.setFog({}); // Set the default atmosphere style
+    });
+
+    for (const marker of geojson.features) {
+      // Create a DOM element for each marker.
+      const el = document.createElement('div');
+      el.className = 'marker';
+      const size = marker.properties.height / 100;
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+       
+      // Add a popup displayed on click for each marker
+      const popup = new mapboxgl.Popup({ offset: 25 });
+      popup.setHTML(
+      `<h2>${marker.properties.name}</h2>${marker.properties.height}m<br/>`
+      );
+       
+      // Add markers to the map.
+      new mapboxgl.Marker({
+      element: el,
+      // Point markers toward the nearest horizon
+      rotationAlignment: 'horizon',
+      offset: [0, -size / 2]
+      })
+      .setLngLat(marker.geometry.coordinates)
+      .setPopup(popup)
+      .addTo(map);
+    }
   }
 
   return (
@@ -45,9 +76,34 @@ export default function Home() {
       </Head>
       <main>
         <Box id='map' sx={{
+          position: 'relative',
           width:1,
-          height: "100vh"
-        }}></Box>
+          height: "100vh",
+          overflow: 'hidden',
+        }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              height: '120px',
+              width: 1,
+              maxWidth: "300px",
+              border: t => `2px solid ${t.palette.primary.main}`,
+              backdropFilter: 'blur(2px)',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              borderRadius: 4,
+              boxShadow: 2,
+              zIndex: '1024',
+              color: '#fff',
+              padding: 2,
+              margin: 1,
+            }}
+          >
+            <Typography variant='h6'>SOME INFORMATION CAN BE THERE</Typography>
+            <Typography>لورم ایپسوم متن ساختگی  استاز، و </Typography>
+          </Box>
+        </Box>
       </main>
     </>
   )
